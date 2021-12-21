@@ -13,16 +13,19 @@ mod control;
 
 pub struct TickState {
     dot: Dot,
+    boarders: Boarders,
 }
 
 impl TickState {
-    pub fn new() -> TickState {
+    pub fn new(boarders: Boarders) -> TickState {
         let dot = Dot {
             x: 400.5,
-            y: 300.5
+            y: 300.5,
+            radius: 10.0
         };
         TickState {
             dot,
+            boarders,
         }
     }
 }
@@ -40,7 +43,7 @@ impl event::EventHandler<ggez::GameError> for TickState {
             ctx,
             graphics::DrawMode::fill(),
             Vec2::new(0.0, 0.0),
-            10.0,
+            self.dot.radius.clone(),
             0.1,
             Color::WHITE,
         )?;
@@ -64,24 +67,46 @@ impl event::EventHandler<ggez::GameError> for TickState {
 
         let dot = &mut self.dot;
         let direction = direction.unwrap();
-        match direction {
-            Direction::Up => dot.y = dot.y - 5.0,
-            Direction::Down => dot.y = dot.y % 600.0 + 5.0,
-            Direction::Left => dot.x = dot.x - 5.0,
-            Direction::Right => dot.x = dot.x % 800.0 + 5.0,
-        }
-
-        if dot.y < 0.0 {
-            dot.y = dot.y + 600.0;
-        }
-
-        if dot.x < 0.0 {
-            dot.x = dot.x + 800.0;
-        }
+        dot.move_direction(direction, &self.boarders);
     }
 }
 
 struct Dot {
     x: f32,
     y: f32,
+    radius: f32,
+}
+
+pub struct Boarders {
+    pub x_left: f32,
+    pub x_right: f32,
+    pub y_left: f32,
+    pub y_right: f32,
+}
+
+impl Dot {
+    fn move_direction(&mut self, direction: Direction, boarders: &Boarders) {
+        match direction {
+            Direction::Up => self.y = self.y - 5.0,
+            Direction::Down => self.y = self.y + 5.0,
+            Direction::Left => self.x = self.x - 5.0,
+            Direction::Right => self.x = self.x + 5.0,
+        }
+
+        if self.y < boarders.y_left + self.radius {
+            self.y = self.radius;
+        }
+
+        if self.y > boarders.y_right - self.radius {
+            self.y = boarders.y_right - self.radius ;
+        }
+
+        if self.x < boarders.x_left + self.radius {
+            self.x = self.radius;
+        }
+
+        if self.x > boarders.x_right - self.radius {
+            self.x = boarders.x_right - self.radius ;
+        }
+    }
 }
